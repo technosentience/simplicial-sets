@@ -90,18 +90,18 @@ def boundary_morphism : simplex_end n ⟶ ∂Δ[n + 2] :=
     exact fin.succ_above_ne _ _,
   }⟩)
 
-def boundary_inv : ∂Δ[n + 2] ⟶ simplex_end n :=
-  { app := λ m (a : {b : Δ[n + 2].obj m // _}), by {
-      cases a, simp only [not_exists, not_forall] at a_property,
-      set i := classical.some a_property,
-      refine (sigma.ι _ _).app _ _,
-      use i,
-      dsimp [opposite] at m,
-      dsimp [simplex_f, sSet.standard_simplex, opposite.unop] at *,
-      have b := simplex_category.σ i.cast_pred,
-      change [n + 2] ⟶ [n + 1] at b,
-      exact @simplex_category.hom.comp m [n + 2] [n + 1] b a_val,
-  } }
+-- def boundary_inv : ∂Δ[n + 2] ⟶ simplex_end n :=
+--   { app := λ m (a : {b : Δ[n + 2].obj m // _}), by {
+--       cases a, simp only [not_exists, not_forall] at a_property,
+--       set i := classical.some a_property,
+--       refine (sigma.ι _ _).app _ _,
+--       use i,
+--       dsimp [opposite] at m,
+--       dsimp [simplex_f, sSet.standard_simplex, opposite.unop] at *,
+--       have b := simplex_category.σ i.cast_pred,
+--       change [n + 2] ⟶ [n + 1] at b,
+--       exact @simplex_category.hom.comp m [n + 2] [n + 1] b a_val,
+--   } }
 
 def boundary_coeq : morph_boundary_1 n ≫ boundary_morphism n = morph_boundary_2 n ≫ boundary_morphism n :=
 begin
