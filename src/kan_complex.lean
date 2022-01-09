@@ -148,17 +148,17 @@ def horn_has_filler {X : sSet.{u}} (f : Λ[n+2, k] ⟶ X) :=
 def is_kan_complex (X : sSet.{u}) := ∀ {n k}, ∀ f : Λ[n+2, k] ⟶ X, horn_has_filler n k f
 
 
-def connected_horn (X : sSet.{u}) (y : fin (n + 3) -> X _[n+1]) :=
-  ∀ idx : horn_part.{u} n k, X.δ idx.i (y idx.j.succ) = X.δ idx.j (y idx.i.cast_succ)
+def connected_horn (X : sSet.{u}) (y : (excluded_part.{u} n k) -> X _[n+1]) :=
+  ∀ idx : horn_part.{u} n k, X.δ idx.i (y ⟨idx.j.succ, idx.h₃⟩) = X.δ idx.j (y ⟨idx.i.cast_succ, idx.h₂⟩)
 
-def has_matching_faces (X : sSet.{u}) := ∀ {n k}, ∀ y : fin (n + 3) -> X _[n+1],
-  (connected_horn.{u} n k X y) -> ∃ y' : X _[n+2], ∀ {i}, i ≠ k -> X.δ i y' = y i
+def has_matching_faces (X : sSet.{u}) := ∀ {n k}, ∀ y : (excluded_part.{u} n k) -> X _[n+1],
+  (connected_horn.{u} n k X y) -> ∃ y' : X _[n+2], ∀ idx : excluded_part.{u} n k, X.δ idx.i y' = y idx
 
 lemma kan_complex_impl_matching_face (X : sSet.{u}) : is_kan_complex X -> has_matching_faces X :=
 begin
   simp [is_kan_complex, has_matching_faces, connected_horn, horn_has_filler],
   intros kan n k y conn,
-  set yₘ : excluded_end n k ⟶ X := limits.sigma.desc (λ idx, yoneda_equiv.inv_fun (y idx.i)),
+  set yₘ : excluded_end n k ⟶ X := limits.sigma.desc (λ idx, yoneda_equiv.inv_fun (y idx)),
   set y' : limits.cofork (morph_horn_1 n k) (morph_horn_2 n k) := limits.cofork.of_π yₘ (by {
     rewrite [morph_horn_1, morph_horn_2],
     apply limits.colimit.hom_ext,
@@ -174,12 +174,12 @@ begin
   specialize kan f,
   cases kan,
   use (yoneda_equiv kan_w),
-  intros i h,
+  intro idx,
   dsimp only [simplicial_object.δ],
   rw [yoneda_equiv_naturality],
   rw [equiv.apply_eq_iff_eq_symm_apply yoneda_equiv],
 
-  have h' : (horn_morphism_i n k ⟨i, h⟩ ≫ sSet.horn_inclusion (n + 2) k) ≫ kan_w = horn_morphism_i n k ⟨i, h⟩ ≫ f
+  have h' : (horn_morphism_i n k idx ≫ sSet.horn_inclusion (n + 2) k) ≫ kan_w = horn_morphism_i n k idx ≫ f
     := by simp [kan_h],
   simp [horn_morphism_i_incl, f] at h',
   
@@ -187,19 +187,51 @@ begin
   rw [←limits.cofork.π_eq_app_one] at h'',
   dsimp [horn_fork, limits.cofork.π_of_π] at h'',
   
-  have h''' : ((limits.sigma.ι (excluded_f.{u} n k) ⟨i, h⟩) ≫ horn_morphism n k) ≫ (horn_colim n k).desc y'
-    = (limits.sigma.ι (excluded_f.{u} n k) ⟨i, h⟩) ≫ yₘ := by simp [h''],
+  have h''' : ((limits.sigma.ι (excluded_f.{u} n k) idx) ≫ horn_morphism n k) ≫ (horn_colim n k).desc y'
+    = (limits.sigma.ι (excluded_f.{u} n k) idx) ≫ yₘ := by simp [h''],
   simp [horn_morphism, limits.colimit.ι_desc] at h''',
 
   rwa [←h'''],
 end
 
-lemma matching_face_impl_kan_complex (X : sSet) : has_matching_faces X -> is_kan_complex X :=
+lemma matching_face_impl_kan_complex (X : sSet.{u}) : has_matching_faces X -> is_kan_complex X :=
 begin
   simp [is_kan_complex, has_matching_faces, connected_horn, horn_has_filler],
   intros face n k f,
-  fconstructor,
-  apply yoneda_equiv.inv_fun, 
-  admit,
-  admit,
+
+  set y : excluded_part.{u} n k → X.obj (opposite.op [n + 1]) :=
+    λ idx, yoneda_equiv (horn_morphism_i.{u} n k idx ≫ f),
+  specialize face y,
+  specialize face (by {
+    intro idx,
+    have h : limits.sigma.ι (horn_f.{u} n k) idx ≫ (morph_horn_1.{u} n k ≫ horn_morphism.{u} n k) ≫ f = 
+      limits.sigma.ι (horn_f.{u} n k) idx ≫ (morph_horn_2.{u} n k ≫ horn_morphism.{u} n k) ≫ f := by rw [horn_coeq],
+    dsimp [morph_horn_1, morph_horn_2, horn_morphism, horn_morphism_i] at h,
+    simp at h,
+    rw [←equiv.apply_eq_iff_eq yoneda_equiv] at h,
+    rw [←yoneda_equiv_naturality, ←yoneda_equiv_naturality] at h,
+    dsimp [simplicial_object.δ, y],
+    simp [yoneda_equiv] at h,
+    exact h,
+  }),
+
+  cases face,
+  use yoneda_equiv.inv_fun face_w,
+  
+  dsimp only [y] at face_h,
+  apply limits.cofork.is_colimit.hom_ext (horn_colim n k),
+  dsimp [horn_fork],
+  dsimp only [horn_morphism],
+  
+  apply limits.colimit.hom_ext,
+  simp only [limits.cofan.mk_ι_app, limits.colimit.ι_desc, limits.colimit.ι_desc_assoc, coe_coe,
+    equiv.inv_fun_as_coe, category.assoc],
+  intro idx,
+  specialize face_h idx,
+  rw [←category.assoc, horn_morphism_i_incl n k idx, ←equiv.apply_eq_iff_eq yoneda_equiv],
+  rw [←yoneda_equiv_naturality, equiv.apply_symm_apply],
+  exact face_h,
 end
+
+lemma kan_complex_equiv_matching_face_property (X : sSet.{u}) : is_kan_complex X ≃ has_matching_faces X
+  := ⟨kan_complex_impl_matching_face X, matching_face_impl_kan_complex X, λ _, rfl, λ _, rfl⟩
