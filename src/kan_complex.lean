@@ -99,10 +99,18 @@ def boundary_colim : limits.is_colimit (boundary_fork.{u} n) := sorry
 
 def horn_morphism_i : excluded_part.{u} n k → ((Δ[n+1] : sSet.{u}) ⟶ (Λ[n+2, k] : sSet.{u}))
   := λ idx, yoneda_equiv.inv_fun ⟨simplex_category.δ idx.i, by {
+    cases idx with i h₀,
     intro h,
-    dsimp [simplex_category.δ, simplex_category.hom.mk] at *,
-    simp only [set.union_singleton] at *,
-    admit,
+    dsimp [simplex_category.δ, simplex_category.hom.mk] at h,
+    simp [set.union_singleton, sSet.as_preorder_hom] at h,
+    simp_rw [set.ext_iff] at h,
+    specialize h i,
+    have h' := h.mpr (set.mem_univ i),
+    simp at h',
+    cases h',
+    contradiction,
+    cases h',
+    exact fin.succ_above_ne _ _ h'_h,
   }⟩
 
 lemma horn_morphism_i_incl (idx : excluded_part.{u} n k) :
