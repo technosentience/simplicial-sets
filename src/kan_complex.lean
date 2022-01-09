@@ -106,7 +106,8 @@ def horn_morphism_i : excluded_part.{u} n k → ((Δ[n+1] : sSet.{u}) ⟶ (Λ[n+
   }⟩
 
 lemma horn_morphism_i_incl (idx : excluded_part.{u} n k) :
-  horn_morphism_i n k idx ≫ sSet.horn_inclusion (n + 2) k = yoneda.map (simplex_category.δ idx.i) := sorry
+  horn_morphism_i n k idx ≫ sSet.horn_inclusion (n + 2) k = yoneda.map (simplex_category.δ idx.i)
+  := rfl
 
 def horn_morphism : excluded_end.{u} n k ⟶ (Λ[n + 2, k] : sSet.{u}) :=
   limits.sigma.desc (horn_morphism_i.{u} n k)
