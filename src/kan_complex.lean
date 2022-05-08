@@ -145,13 +145,13 @@ def horn_colim : limits.is_colimit (horn_fork n k) := sorry
 def horn_has_filler {X : sSet} (f : Λ[n+2, k] ⟶ X) := 
   ∃ f' : Δ[n+2] ⟶ X, sSet.horn_inclusion (n + 2) k ≫ f' = f
 
-def is_kan_complex (X : sSet) := ∀ {n k}, ∀ f : Λ[n+2, k] ⟶ X, horn_has_filler n k f
+def is_kan_complex (X : sSet) := ∀ (n k), ∀ f : Λ[n+2, k] ⟶ X, horn_has_filler n k f
 
 
 def connected_horn (X : sSet) (y : (excluded_part n k) -> X _[n+1]) :=
   ∀ idx : horn_part n k, X.δ idx.i (y ⟨idx.j.succ, idx.h₃⟩) = X.δ idx.j (y ⟨idx.i.cast_succ, idx.h₂⟩)
 
-def has_matching_faces (X : sSet) := ∀ {n k}, ∀ y : (excluded_part n k) -> X _[n+1],
+def has_matching_faces (X : sSet) := ∀ (n k), ∀ y : (excluded_part n k) -> X _[n+1],
   (connected_horn n k X y) -> ∃ y' : X _[n+2], ∀ idx : excluded_part n k, X.δ idx.i y' = y idx
 
 lemma kan_complex_impl_matching_face (X : sSet) : is_kan_complex X -> has_matching_faces X :=
@@ -171,7 +171,7 @@ begin
     exact conn idx,
   }),
   set f := (horn_colim n k).desc y',
-  specialize kan f,
+  specialize kan n k f,
   cases kan,
   use (yoneda_equiv kan_w),
   intro idx,
@@ -200,7 +200,7 @@ begin
 
   set y : excluded_part n k → X.obj (opposite.op [n + 1]) :=
     λ idx, yoneda_equiv (horn_morphism_i n k idx ≫ f),
-  specialize face y,
+  specialize face n k y,
   specialize face (by {
     intro idx,
     have h : limits.sigma.ι (horn_f n k) idx ≫ (morph_horn_1 n k ≫ horn_morphism n k) ≫ f = 
@@ -232,5 +232,5 @@ begin
   exact face_h,
 end
 
-lemma kan_complex_equiv_matching_face_property (X : sSet) : is_kan_complex X ≃ has_matching_faces X
-  := ⟨kan_complex_impl_matching_face X, matching_face_impl_kan_complex X, λ _, rfl, λ _, rfl⟩
+lemma kan_complex_iff_matching_faces {X : sSet} : is_kan_complex X ↔ has_matching_faces X
+  := ⟨kan_complex_impl_matching_face X, matching_face_impl_kan_complex X⟩
