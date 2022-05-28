@@ -95,7 +95,55 @@ end
 
 def boundary_fork := limits.cofork.of_π (boundary_morphism n) (boundary_coeq n)
 
-def boundary_colim : limits.is_colimit (boundary_fork n) := sorry
+lemma nonsurj_decomposition {m n} (f : [m] ⟶ [n + 1]) (h : ¬ function.surjective f.to_order_hom)
+  : ∃ i f', f = f' ≫ simplex_category.δ i :=
+begin
+  simp only [not_forall, not_exists] at h,
+  cases h with w h,
+  use w,
+  simp only [simplex_category.δ, simplex_category.hom.comp, simplex_category.mk_hom, simplex_category.small_category_comp,
+  simplex_category.hom.to_order_hom_mk] at *,
+  cases lt_or_eq_of_le (fin.le_last w),
+
+  focus {
+    set w' := w.cast_pred,
+    have hw : w = w'.cast_succ := by rwa [fin.cast_succ_cast_pred],
+    fconstructor,
+    apply simplex_category.hom.mk,
+    dsimp at *,
+    exact order_hom.comp ⟨w'.pred_above, fin.pred_above_right_monotone _⟩ f.to_order_hom,
+    dsimp [simplex_category.δ],
+    ext1, ext1, ext1, -- no ext for fin
+    simp only [simplex_category.hom.to_order_hom_mk, order_hom.comp_coe, order_embedding.to_order_hom_coe, order_hom.coe_fun_mk,
+    function.comp_app],
+    set y := f.to_order_hom x with hy,
+    simp_rw [←hy, hw],
+    rw [fin.cast_pred_cast_succ],
+    rw [fin.succ_above_pred_above],
+    rw [hy, ←hw],
+    apply h,
+  },
+
+  focus {
+    fconstructor,
+    apply simplex_category.hom.mk,
+    exact order_hom.comp ⟨fin.cast_pred, fin.cast_pred_monotone⟩ f.to_order_hom,
+    ext1, ext1, ext1,
+    simp only [h_1, simplex_category.hom.to_order_hom_mk, order_hom.comp_coe, order_embedding.to_order_hom_coe, order_hom.coe_fun_mk,
+      function.comp_app],
+    set y := f.to_order_hom x with ←hy,
+    simp_rw [hy],
+    dsimp,
+    rw [fin.succ_above_last],
+    rw [fin.cast_succ_cast_pred],
+    cases lt_or_eq_of_le (fin.le_last y),
+    assumption,
+    exfalso,
+    specialize h x,
+    simp_rw [h_1, h_2] at *,
+    contradiction,
+  },
+end
 
 def horn_morphism_i : excluded_part n k → (Δ[n+1] ⟶ Λ[n+2, k])
   := λ idx, yoneda_equiv.inv_fun ⟨simplex_category.δ idx.i, by {
