@@ -35,22 +35,22 @@ lemma induction_succ
   @fin.induction n C h0 hs i.succ =
     hs i (@fin.induction n C h0 hs i.cast_succ) := by cases i; refl
 
+lemma sset_comp (X : sGrp) {i j k} (f : X _[i] ⟶ X _[j])
+  (g : X _[j] ⟶ X _[k]) (x : X _[i]) : g (f x) = (f ≫ g) x := rfl
+
 def u
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y)
+  (faces : matching_faces.{u} n k G y)
   (r : fin (n + 3)) (h : r ≤ k) : G _[n + 2] :=
   fin.induction (λ h, 1) (λ r' ih h,
     have h' : r'.cast_succ < k := fin.cast_succ_lt_iff_succ_le.mpr h,
     let u' := ih (le_of_lt h') in
     u' * G.σ r' (G.δ r'.cast_succ (u' ⁻¹) * y ⟨r'.cast_succ, ne_of_lt h'⟩ ) ) r h
 
-lemma sset_comp (X : sGrp) {i j k} (f : X _[i] ⟶ X _[j])
-  (g : X _[j] ⟶ X _[k]) (x : X _[i]) : g (f x) = (f ≫ g) x := rfl
-
 lemma du
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y)
-(r i: fin (n + 3)) (h : r ≤ k) (hi : i < r) : G.δ i (u y conn r h) = y ⟨i, ne_of_lt (lt_of_lt_of_le hi h)⟩ :=
+  (faces : matching_faces.{u} n k G y)
+(r i: fin (n + 3)) (h : r ≤ k) (hi : i < r) : G.δ i (u y faces r h) = y ⟨i, ne_of_lt (lt_of_lt_of_le hi h)⟩ :=
 begin
   refine fin.induction _ _ r h i hi;
   clear hi i h r,
@@ -60,7 +60,7 @@ begin
   },
   intros r ih h i hi,
   have irlv : i ≠ k := ne_of_lt (lt_of_lt_of_le hi h),
-  change G.δ i (u y conn r.succ h) = y {i := i, h := irlv},
+  change G.δ i (u y faces r.succ h) = y {i := i, h := irlv},
   by_cases hi' : i = r.cast_succ,
   focus {
     subst hi',
@@ -114,7 +114,7 @@ begin
   have j_neq_k : j.cast_succ ≠ k := by rwa [←hj],
   have r_lt_k : r'.cast_succ.succ < k :=
     by rwa [fin.succ_cast_succ, ←hr, fin.cast_succ_lt_iff_succ_le],
-  have hc := conn ⟨j, r'.cast_succ, j_leq_r', j_neq_k, ne_of_lt r_lt_k⟩, simp only at hc,
+  have hc := faces ⟨j, r'.cast_succ, j_leq_r', j_neq_k, ne_of_lt r_lt_k⟩, simp only at hc,
   change simplicial_object.δ G j (y {i := r'.cast_succ.succ, h := _}) = simplicial_object.δ G r'.cast_succ (y {i := j.cast_succ, h := _}) at hc,
   simp_rw [fin.succ_cast_succ] at hc,
   rw hc,
@@ -123,12 +123,12 @@ end
 
 def u'
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y) : G _[n + 2] := u y conn k (by refl)
+  (faces : matching_faces.{u} n k G y) : G _[n + 2] := u y faces k (by refl)
 
 def du'
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y)
-  (i : fin (n + 3)) (h : i < k) : G.δ i (u' y conn) = y ⟨i, ne_of_lt h⟩ :=
+  (faces : matching_faces.{u} n k G y)
+  (i : fin (n + 3)) (h : i < k) : G.δ i (u' y faces) = y ⟨i, ne_of_lt h⟩ :=
 begin
   dsimp [u'],
   apply du,
@@ -137,9 +137,9 @@ end
 
 def w
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y)
+  (faces : matching_faces.{u} n k G y)
   (r : fin (n + 3)) (h : r ≥ k) : G _[n + 2] :=
-  fin.reverse_induction (λ _, u' y conn) (λ r' ih h,
+  fin.reverse_induction (λ _, u' y faces) (λ r' ih h,
     have h' : r'.succ > k := fin.le_cast_succ_iff.mp h, 
     let w' := ih (le_of_lt h') in
     w' * G.σ r' (G.δ r'.succ (w' ⁻¹) * y ⟨r'.succ, ne_of_gt h'⟩)) r h
@@ -157,9 +157,9 @@ end
 
 lemma dw
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y)
+  (faces : matching_faces.{u} n k G y)
   (r i : fin (n + 3)) (h : r ≥ k) (hi : i < k ∨ i > r) :
-  G.δ i (w y conn r h) = y ⟨i, aux_dw h hi⟩ :=
+  G.δ i (w y faces r h) = y ⟨i, aux_dw h hi⟩ :=
 begin
   refine fin.reverse_induction _ _ r h i hi;
   clear' r h i hi,
@@ -174,7 +174,7 @@ begin
   },
   intros r ih h i hi,
   have irlv := aux_dw h hi,
-  change G.δ i (w y conn (r.cast_succ) h) = y {i := i, h := irlv},
+  change G.δ i (w y faces (r.cast_succ) h) = y {i := i, h := irlv},
   by_cases hi' : r.succ = i,
   focus {
     subst hi',
@@ -231,11 +231,11 @@ begin
     rw [simplicial_object.δ_comp_δ], swap, assumption,
     rw [←sset_comp],
     rw [ih],
-    specialize conn ⟨j, r'.succ, j_le_r'_succ, irlv, ne_of_gt r_succ_gt_k⟩,
-    simp only at conn,
+    specialize faces ⟨j, r'.succ, j_le_r'_succ, irlv, ne_of_gt r_succ_gt_k⟩,
+    simp only at faces,
     change G.δ j (y {i := r'.succ.succ, h := _}) =
-      G.δ r'.succ (y {i := j.cast_succ, h := _}) at conn,
-    rw [←conn_1],
+      G.δ r'.succ (y {i := j.cast_succ, h := _}) at faces,
+    rw [←faces_1],
     simp only [mul_left_inv],
   },
   case or.inr {
@@ -262,23 +262,23 @@ begin
     simp_rw [fin.succ_cast_succ],
     rw [←simplicial_object.δ_comp_δ], swap, assumption,
     simp_rw [←fin.succ_cast_succ, ←sset_comp, ih],
-    specialize conn ⟨r'.succ, j, hi', ne_of_gt r_succ_gt_k, irlv⟩,
-    simp only at conn,
+    specialize faces ⟨r'.succ, j, hi', ne_of_gt r_succ_gt_k, irlv⟩,
+    simp only at faces,
     change G.δ r'.succ (y {i := j.succ, h := _}) =
-      G.δ j (y {i := r'.succ.cast_succ, h := _}) at conn,
-    simp_rw [fin.succ_cast_succ, ←conn_1],
+      G.δ j (y {i := r'.succ.cast_succ, h := _}) at faces,
+    simp_rw [fin.succ_cast_succ, ←faces_1],
     simp only [mul_left_inv],
   },
 end
 
 def w'
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y) : G _[n + 2] := w y conn k (by fconstructor)
+  (faces : matching_faces.{u} n k G y) : G _[n + 2] := w y faces k (by fconstructor)
 
 def dw'
   (y : excluded_part n k → G _[n + 1])
-  (conn : connected_horn.{u} n k G y)
-  (i : fin (n + 3)) (h : i ≠ k) : G.δ i (w' y conn) = y ⟨i, h⟩ :=
+  (faces : matching_faces.{u} n k G y)
+  (i : fin (n + 3)) (h : i ≠ k) : G.δ i (w' y faces) = y ⟨i, h⟩ :=
 begin
   cases lt_trichotomy i k,
   apply dw, left, assumption,
@@ -286,14 +286,14 @@ begin
   apply dw, right, assumption,
 end
 
-def sGrp_Ext (G : sGrp.{0}) : has_matching_faces.{0} G :=
+def sGrp_Ext (G : sGrp.{0}) : extension_condition.{0} G :=
 begin
-  dsimp [has_matching_faces],
-  intros n k y conn,
-  use w' y conn,
+  dsimp [extension_condition],
+  intros n k y faces,
+  use w' y faces,
   intro idx, cases idx,
   apply dw',
 end
 
-def sGrp_Kan (G : sGrp.{0}) : is_kan_complex G :=
-  kan_complex_iff_matching_faces.mpr (sGrp_Ext G)
+def sGrp_Kan (G : sGrp.{0}) : kan_complex G :=
+  kan_complex_iff_extension_conditions.mpr (sGrp_Ext G)
